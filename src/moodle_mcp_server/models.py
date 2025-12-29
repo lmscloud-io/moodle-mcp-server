@@ -50,32 +50,3 @@ class DownloadedFile(File):
             raise ToolError(f"Error downloading file from URL {url}: {result.status_code} {result.text}")
 
         return DownloadedFile(data=result.content, headers=result.headers)
-
-
-# Headers returned when downloading the file from this URL:
-# https://moodle.site/webservice/pluginfile.php/14/course/overviewfiles/Sun%20behind%20the%20Heel%20Stone.jpg
-
-#Downloaded file headers: {'Accept-Ranges': 'bytes',
-# 'Access-Control-Allow-Headers': 'range',
-# 'Access-Control-Allow-Origin': '*',
-# 'Access-Control-Expose-Headers': 'Content-Range',
-# 'Cache-Control': 'private, max-age=3600, no-transform',
-# 'Content-Disposition': 'inline; filename="Sun behind the Heel Stone.jpg"',
-# 'Content-Length': '35905',
-# 'Content-Type': 'image/jpeg',
-# 'Date': 'Mon, 08 Dec 2025 22:45:42 GMT',
-# 'Etag': '"2046da4999741b2e2a114b9ef518a6fd2f62d434"',
-# 'Expires': 'Mon, 08 Dec 2025 23:45:42 GMT',
-# 'Last-Modified': 'Mon, 08 Dec 2025 21:39:41 GMT',
-# 'Ngrok-Agent-Ips': '82.154.183.25',
-# 'Pragma': '',
-# 'Server': 'Apache/2.4.41 (Ubuntu)'}
-
-
-
-# Headers returned when downloading the file from the URL:
-# https://moodle.site/webservice/pluginfile.php/14/course/overviewfiles/Sun%20behind%20the%20Heel%20Stone.jpg?preview=thumb:
-
-# 'Content-Disposition': 'inline; filename="2046da4999741b2e2a114b9ef518a6fd2f62d434"',
-# 'Content-Length': '11746',
-# 'Content-Type': 'image/png'

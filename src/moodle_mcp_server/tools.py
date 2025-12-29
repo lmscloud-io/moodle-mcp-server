@@ -12,14 +12,6 @@ from .utils import Utils
 class MoodleTool:
     """Communication with Moodle web services."""
 
-    # @staticmethod
-    # def urlencode_flat(l: dict):
-    #     """Same as urlencode but encodes nulls as "" instead of "None"."""
-    #     def _encode_value(k, v):
-    #         return urlencode({k: ("" if v is None else v)}, safe='[]')
-    #     return '&'.join([_encode_value(k, l[k]) for k in l.keys()])
-
-
     @staticmethod
     def urlencode_dict(d: dict):
         def _flatten(list_of_dicts):
@@ -38,7 +30,7 @@ class MoodleTool:
 
 
     @staticmethod
-    async def run_moodle_tool(name: str, arguments: dict, output_schema) -> ToolResult:
+    async def execute_moodle_web_service(name: str, arguments: dict, tools) -> ToolResult:
         """Executes the tool by making a call to Moodle web service."""
         baseurl, wstoken = Utils.verify_has_credentials(get_context())
 
@@ -47,8 +39,10 @@ class MoodleTool:
                                data=MoodleTool.urlencode_dict(data),
                                allow_redirects=True,
                                headers={'Content-Type': 'application/x-www-form-urlencoded'})
-
-        return ToolResult(structured_content=MoodleTool.fix_empty_arrays({"result": jsonresult}, output_schema))
+        structured_content = {"result": jsonresult}
+        for tool in tools:
+            structured_content = MoodleTool.fix_empty_arrays(structured_content, tool.output_schema)
+        return ToolResult(structured_content=structured_content)
 
 
     @staticmethod
@@ -70,7 +64,7 @@ class MoodleTool:
 
 
     @staticmethod
-    async def run_moodle_tool_upload(arguments: dict) -> ToolResult:
+    async def upload_files(arguments: dict) -> ToolResult:
         """Uploads one or more files to Moodle draft file area"""
         ctx = get_context()
         baseurl, wstoken = Utils.verify_has_credentials(ctx)
@@ -129,7 +123,7 @@ class MoodleTool:
 
 
     @staticmethod
-    async def run_moodle_tool_download(arguments: dict) -> ToolResult:
+    async def download_file(arguments: dict) -> ToolResult:
         """Downloads a file from Moodle given its pluginfile.php URL."""
         baseurl, wstoken = Utils.verify_has_credentials(get_context())
         url = arguments.get("url", "")
@@ -151,10 +145,3 @@ class MoodleTool:
 
         file = await DownloadedFile.request_file(baseurl + pluginfileurl, wstoken)
         return ToolResult(content=file)
-
-        #return File(data=result.content, name="Sun behind the Heel Stone", format="jpg")  # TODO extract name and format (=extension) from the headers
-
-        # async with aiohttp.ClientSession() as session:
-        #     async with session.get(url) as response:
-        #         pdf_data = await response.read()
-        #         return File(data=pdf_data, format="pdf")

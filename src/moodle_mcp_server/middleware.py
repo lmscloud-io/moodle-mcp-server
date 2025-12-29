@@ -12,6 +12,7 @@ from typing_extensions import override
 
 from .tools import MoodleTool
 from .utils import Utils
+import hashlib
 
 @dataclass
 class AccessCredentials:
@@ -24,13 +25,6 @@ class MoodleMiddleware(Middleware):
     def __init__(self) -> None:
 
         self._all_client_tools: dict[str, Tool] = {}
-
-    # async def on_initialize(
-    #     self,
-    #     context: MiddlewareContext,
-    #     call_next,
-    # ) -> None:
-    #     return await call_next(context)
 
 
     # async def elicit_credentials(self, context: MiddlewareContext):
@@ -107,19 +101,10 @@ class MoodleMiddleware(Middleware):
         tool_name = context.message.name
         arguments = context.message.arguments or {}
 
-        # We can potentially access the tool object to check its metadata, but it is not available for dynamically injected tools
-        # if context.fastmcp_context:
-        #     try:
-        #         tool = await context.fastmcp_context.fastmcp.get_tool(context.message.name)
-        #     except Exception as e:
-        #         # Tool not found or other error - let execution continue
-        #         # and handle the error naturally
-        #         pass
-
         if tool_name == "upload_files":
-            return await MoodleTool.run_moodle_tool_upload(arguments)
+            return await MoodleTool.upload_files(arguments)
         elif tool_name == "download_file":
-            return await MoodleTool.run_moodle_tool_download(arguments)
+            return await MoodleTool.download_file(arguments)
 
         if not tool_name in self._all_client_tools:
             # Something somewhere expired or server restarted. We need to send an error and tell the client to re-request list of tools.
@@ -127,12 +112,12 @@ class MoodleMiddleware(Middleware):
             raise FastMCPError(f"Something went wrong, there is a possible cache issue in the MCP server. Please repeat the request.")
 
         tool = self._all_client_tools[tool_name]
-        return await MoodleTool.run_moodle_tool(
+        return await MoodleTool.execute_moodle_web_service(
             name=tool_name,
             arguments=arguments,
             # We pass output_schema so we can fix empty arrays in the result. A bit stupid that because of Moodle bug we need to
             # add a huge layer of caching.
-            output_schema=tool.output_schema,
+            tools=tool.values(),
         )
 
 
@@ -148,10 +133,10 @@ class MoodleMiddleware(Middleware):
 
     async def load_functions_from_site_info(self, ctx: Context):
         """Request a list of available functions using core_webservice_get_site_info external function (fallback if tool_wsdiscovery is not installed)."""
-        result = await MoodleTool.run_moodle_tool(
+        result = await MoodleTool.execute_moodle_web_service(
             name="core_webservice_get_site_info",
             arguments={},
-            output_schema=None)
+            tools=[])
         content, structured_content = result.to_mcp_result()
         function_names = structured_content.get("result", {}).get("functions", [])
         return self.prepare_schemas({"functionnames": function_names})
@@ -169,7 +154,6 @@ class MoodleMiddleware(Middleware):
         try:
             functions = await self.load_functions_from_wsdiscovery(ctx)
         except FastMCPError as e1:
-            # await ctx.warning(f"Failed to load functions from Moodle site using wsdiscovery method: {str(e1)}. Trying site info method...")
             try:
                 functions = await self.load_functions_from_site_info(ctx)
             except FastMCPError as e2:
@@ -178,17 +162,16 @@ class MoodleMiddleware(Middleware):
                                    f"More details about the error:\n1. {str(e1)}\n2. {str(e2)}")
 
         for toolinfo in functions:
-            #await ctx.info("Registering tool:" + json.dumps(toolinfo))
             tool = Tool(
                 name=toolinfo.get("name"),
                 description=toolinfo.get("description"),
                 parameters=toolinfo.get("inputSchema", None),
                 output_schema=toolinfo.get("outputSchema", None),
                 enabled=True,
-                # meta={"output_schema_hash": hashlib.sha256(json.dumps(result).encode('utf-8')).hexdigest()},
             )
-            # TODO what if two clients need the same tool with different schemas? We need to either add some hash to the tool name or add a hash as a tag.
+            output_schema_hash = hashlib.sha256(json.dumps(toolinfo.get("outputSchema", None)).encode('utf-8')).hexdigest()
             client_tools.append(tool)
-            self._all_client_tools[tool.name] = tool
+            self._all_client_tools[tool.name] = self._all_client_tools[tool.name] if tool.name in self._all_client_tools else {}
+            self._all_client_tools[tool.name][output_schema_hash] = tool
 
         return client_tools

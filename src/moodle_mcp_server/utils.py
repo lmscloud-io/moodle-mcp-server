@@ -14,11 +14,6 @@ class Utils:
     def get_credentials(ctx: Context) -> tuple[str, str]:
         """Retrieves Moodle credentials (site URL and web service token) from HTTP headers or environment variables."""
 
-        # wstoken = ctx.get_state("moodle_wstoken")
-        # baseurl = ctx.get_state("moodle_baseurl")
-        # wstoken = "" if wstoken is None else wstoken
-        # baseurl = "" if baseurl is None else baseurl
-
         # Get token/baseurl from HTTP headers first
         headers = get_http_headers()
         wstoken = headers.get("x-token", "")
@@ -28,12 +23,7 @@ class Utils:
         wstoken = os.environ.get("TOKEN", "").strip() if wstoken == "" else wstoken
         baseurl = Utils.clean_baseurl(os.environ.get("MOODLE", ""), True) if baseurl == "" else baseurl
 
-        # hascredentials = wstoken != "" and baseurl != ""
-        # ctx.set_state("moodle_has_credentials", hascredentials)
-        # ctx.set_state("moodle_baseurl", baseurl if hascredentials else "")
-        # ctx.set_state("moodle_wstoken", wstoken if hascredentials else "")
         # clienthash = hashlib.sha256(f"{baseurl}|{wstoken}".encode('utf-8')).hexdigest() if hascredentials else ""
-        # ctx.set_state("moodle_client_hash", clienthash)
         return baseurl, wstoken
 
 
@@ -52,20 +42,16 @@ class Utils:
     @staticmethod
     def clean_baseurl(url: str, discardInvalid: bool = False) -> str:
         url = url.strip().rstrip('/').lower()
-        # TODO potentially - remove query string, fragments, and if the path ends with "/login/index.php", /login" or "/index.php"
         return "" if discardInvalid and not Utils.is_valid_url(url) else url
 
 
     @staticmethod
-    def is_valid_url(url: str, ctx: Optional[Context] = None) -> bool:
+    def is_valid_url(url: str) -> bool:
         try:
             result = urlparse(url)
             isvalid = all([result.scheme, result.netloc]) and result.scheme in ['http', 'https']
         except ValueError:
             isvalid = False
-        if isvalid == False and ctx is not None:
-            # TODO ctx.error is async!
-            ctx.error(f"The URL '{url}' is not valid")
         return isvalid
 
 
