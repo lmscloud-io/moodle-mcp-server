@@ -1,18 +1,15 @@
+import hashlib
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional
-
+from typing import Any, Dict, List, Optional
 from fastmcp import Context
 from fastmcp.exceptions import FastMCPError
 from fastmcp.server.middleware.middleware import Middleware, MiddlewareContext
-from fastmcp.tools.tool import ToolResult
-from fastmcp.tools.tool import Tool
+from fastmcp.tools.tool import Tool, ToolResult
 from typing_extensions import override
-
 from .tools import MoodleTool
 from .utils import Utils
-import hashlib
 
 @dataclass
 class AccessCredentials:
@@ -23,8 +20,7 @@ class MoodleMiddleware(Middleware):
     """Middleware class for Moodle API communication."""
 
     def __init__(self) -> None:
-
-        self._all_client_tools: dict[str, Tool] = {}
+        self._all_client_tools: Dict[str, Dict[str, Tool]] = {}
 
 
     # async def elicit_credentials(self, context: MiddlewareContext):
@@ -121,7 +117,7 @@ class MoodleMiddleware(Middleware):
         )
 
 
-    async def load_functions_from_wsdiscovery(self, ctx: Context):
+    async def load_functions_from_wsdiscovery(self, ctx: Context) -> List[Dict[str, Any]]:
         """If tool_wsdiscovery plugin is installed on the Moodle site, use it to get the list of available functions."""
         baseurl, wstoken = Utils.verify_has_credentials(ctx)
 
@@ -131,7 +127,7 @@ class MoodleMiddleware(Middleware):
         return self.prepare_schemas({"functions": functions})
 
 
-    async def load_functions_from_site_info(self, ctx: Context):
+    async def load_functions_from_site_info(self, ctx: Context) -> List[Dict[str, Any]]:
         """Request a list of available functions using core_webservice_get_site_info external function (fallback if tool_wsdiscovery is not installed)."""
         result = await MoodleTool.execute_moodle_web_service(
             name="core_webservice_get_site_info",
@@ -142,36 +138,64 @@ class MoodleMiddleware(Middleware):
         return self.prepare_schemas({"functionnames": function_names})
 
 
-    def prepare_schemas(self, payload):
+    def prepare_schemas(self, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Request the function schemas from MCP Ready lookup service. Your credentials are never sent to this service."""
         jsonresult = Utils.request_post_json("https://api.mcp-ready.lmscloud.io/noauth/lookup", json=payload)
         return jsonresult.get("functions", []) if isinstance(jsonresult, dict) else []
 
 
-    async def load_tools(self, ctx: Context) -> list[Tool]:
-        client_tools = []
+    async def load_tools(self, ctx: Context) -> List[Tool]:
+        """Load available Moodle tools from the site."""
+        functions = await self._load_function_definitions(ctx)
+        return self._register_tools(functions)
 
+
+    async def _load_function_definitions(self, ctx: Context) -> List[Dict[str, Any]]:
+        """Load function definitions from Moodle using available methods."""
         try:
-            functions = await self.load_functions_from_wsdiscovery(ctx)
+            return await self.load_functions_from_wsdiscovery(ctx)
         except FastMCPError as e1:
             try:
-                functions = await self.load_functions_from_site_info(ctx)
+                return await self.load_functions_from_site_info(ctx)
             except FastMCPError as e2:
-                raise FastMCPError("Unable to load available external functions from your Moodle site. "+
-                                   "Make sure that you either installed tool_wsdiscovery plugin or enabled function core_webservice_get_site_info. \n\n" +
-                                   f"More details about the error:\n1. {str(e1)}\n2. {str(e2)}")
+                raise FastMCPError(
+                    "Unable to load available external functions from your Moodle site. "
+                    "Make sure that you either installed tool_wsdiscovery plugin or "
+                    "enabled function core_webservice_get_site_info. \n\n"
+                    f"More details about the error:\n1. {str(e1)}\n2. {str(e2)}"
+                )
+
+
+    def _register_tools(self, functions: List[Dict[str, Any]]) -> List[Tool]:
+        """Register tools from function definitions."""
+        client_tools: List[Tool] = []
 
         for toolinfo in functions:
-            tool = Tool(
-                name=toolinfo.get("name"),
-                description=toolinfo.get("description"),
-                parameters=toolinfo.get("inputSchema", None),
-                output_schema=toolinfo.get("outputSchema", None),
-                enabled=True,
-            )
-            output_schema_hash = hashlib.sha256(json.dumps(toolinfo.get("outputSchema", None)).encode('utf-8')).hexdigest()
+            tool = self._create_tool_from_info(toolinfo)
+            output_schema_hash = self._compute_schema_hash(toolinfo.get("outputSchema"))
+
             client_tools.append(tool)
-            self._all_client_tools[tool.name] = self._all_client_tools[tool.name] if tool.name in self._all_client_tools else {}
+
+            # Initialize nested dict if needed
+            if tool.name not in self._all_client_tools:
+                self._all_client_tools[tool.name] = {}
+
             self._all_client_tools[tool.name][output_schema_hash] = tool
 
         return client_tools
+
+
+    def _create_tool_from_info(self, toolinfo: Dict[str, Any]) -> Tool:
+        """Create a Tool instance from tool info dictionary."""
+        return Tool(
+            name=toolinfo.get("name"),
+            description=toolinfo.get("description"),
+            parameters=toolinfo.get("inputSchema"),
+            output_schema=toolinfo.get("outputSchema"),
+            enabled=True,
+        )
+
+
+    def _compute_schema_hash(self, schema: Optional[Any]) -> str:
+        """Compute SHA256 hash of schema for caching."""
+        return hashlib.sha256(json.dumps(schema).encode('utf-8')).hexdigest()

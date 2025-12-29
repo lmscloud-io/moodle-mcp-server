@@ -1,11 +1,10 @@
-from fastmcp.exceptions import ToolError
-from fastmcp import Context
-from fastmcp.server.dependencies import get_http_headers
+from typing import Any, Dict
 import os
-from urllib.parse import urlparse
-from typing import Optional
 import requests
-from fastmcp.exceptions import FastMCPError
+from fastmcp import Context
+from fastmcp.exceptions import FastMCPError, ToolError
+from fastmcp.server.dependencies import get_http_headers
+from urllib.parse import urlparse
 
 
 class Utils:
@@ -25,7 +24,6 @@ class Utils:
 
         # clienthash = hashlib.sha256(f"{baseurl}|{wstoken}".encode('utf-8')).hexdigest() if hascredentials else ""
         return baseurl, wstoken
-
 
 
     @staticmethod
@@ -56,7 +54,7 @@ class Utils:
 
 
     @staticmethod
-    def request_post_json(url: str, **kwargs) -> dict:
+    def request_post_json(url: str, **kwargs: Any) -> Dict[str, Any]:
         """Sends a POST request and returns the JSON response."""
         args = {**kwargs}
         args["headers"] = args.get("headers", {})
@@ -74,7 +72,7 @@ class Utils:
 
 
     @staticmethod
-    def request_post_json_moodle(url: str, **kwargs) -> dict:
+    def request_post_json_moodle(url: str, **kwargs: Any) -> Dict[str, Any]:
         """Sends a POST request to Moodle and returns the JSON response. Moodle can return 200 status code even for errors."""
         jsonresult = Utils.request_post_json(url, **kwargs)
         if (isinstance(jsonresult, dict) and jsonresult.get("exception", None) is not None):
