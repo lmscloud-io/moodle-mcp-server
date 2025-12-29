@@ -1,0 +1,37 @@
+[project]
+name = "moodle-mcp-server"
+version = "0.1.0"
+description = "MCP (Model Context Protocol) server for Moodle LMS integration"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    {name = "Marina Glancy", email = "marina.glancy@gmail.com"}
+]
+keywords = ["mcp", "moodle", "lms", "model-context-protocol", "ai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "fastmcp>=2.13.1",
+    "requests>=2.32.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/lmscloud-io/moodle-mcp-server"
+Repository = "https://github.com/lmscloud-io/moodle-mcp-server"
+Issues = "https://github.com/lmscloud-io/moodle-mcp-server/issues"
+
+[project.scripts]
+moodle-mcp-server = "moodle_mcp_server.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
