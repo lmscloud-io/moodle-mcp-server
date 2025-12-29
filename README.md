@@ -1,82 +1,52 @@
 # Moodle MCP Server
 
-A Model Context Protocol (MCP) server for integrating AI assistants with Moodle LMS.
+Connect AI agents to your Moodle site — administer, analyse, and automate with natural language.
 
 ## Overview
 
-This MCP server enables AI assistants to interact with Moodle Learning Management System, providing capabilities for course management, user interactions, and educational content delivery through the standardized Model Context Protocol.
+Model Context Protocol (MCP) is an open standard that enables large language models and AI agents to communicate with external data, applications, and tools. The **Moodle MCP Server** implements this protocol to execute **Moodle web services** directly from your preferred AI chat using your model of choice. Connect other MCP servers to extend capabilities and chain with retrieval, generation, or analysis tools.
 
-## Features
+Find detailed documentation and examples on [https://lmscloud.io/products/moodle-mcp/](https://lmscloud.io/products/moodle-mcp/)
 
-- **Moodle API Integration**: Direct integration with Moodle's web services API
-- **MCP Protocol Support**: Built on FastMCP for efficient protocol handling
-- **Extensible Architecture**: Easy to add new Moodle-specific tools and resources
+## How to use
 
-## Installation
+### Install uv (package manager) if not installed
 
-### From PyPI (once published)
+For macOS/Linux:
 
 ```bash
-pip install moodle-mcp-server
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### From Source
+For Windows refer to: [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
 
-```bash
-git clone https://github.com/lmscloud-io/moodle-mcp-server.git
-cd moodle-mcp-server
-pip install -e .
+### Add MCP server to your preferred AI chat
+
+Replace environment variables in the example below with your Moodle site URL and a valid web service token.
+We recommend also adding the `unix_timestamps_mcp` server for better time handling.
+
+```json
+{
+  "mcpServers": {
+    "Moodle MCP": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/lmscloud-io/moodle-mcp-server",
+        "moodle-mcp-server"
+      ],
+      "env": {
+        "MOODLE": "https://your-moodle-site.com",
+        "TOKEN": "your_webservice_token"
+      }
+    },
+    "unix_timestamps_mcp": {
+      "command": "npx",
+      "args": ["-y", "github:Ivor/unix-timestamps-mcp"]
+    }
+  }
+}
 ```
-
-## Usage
-
-```python
-from moodle_mcp_server import main
-
-main()
-```
-
-## Configuration
-
-[Add configuration details here once implemented]
-
-## Development
-
-### Setup Development Environment
-
-```bash
-# Clone the repository
-git clone https://github.com/lmscloud-io/moodle-mcp-server.git
-cd moodle-mcp-server
-
-# Install with uv
-uv sync
-
-# Or with pip
-pip install -e ".[dev]"
-```
-
-### Running Tests
-
-```bash
-pytest
-```
-
-## Requirements
-
-- Python >= 3.11
-- Moodle instance with web services enabled
-- Valid Moodle API token
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 
@@ -84,11 +54,8 @@ This project is licensed under the GNU General Public License v3.0 or later - se
 
 ## Links
 
+- **Website**: https://lmscloud.io/products/moodle-mcp/
 - **Repository**: https://github.com/lmscloud-io/moodle-mcp-server
 - **Issue Tracker**: https://github.com/lmscloud-io/moodle-mcp-server/issues
 - **Moodle**: https://moodle.org
 - **Model Context Protocol**: https://modelcontextprotocol.io
-
-## Acknowledgments
-
-Built with [FastMCP](https://github.com/jlowin/fastmcp) - A fast, modern MCP server framework.
