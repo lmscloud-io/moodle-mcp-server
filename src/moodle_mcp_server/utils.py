@@ -5,37 +5,10 @@ from fastmcp import Context
 from fastmcp.exceptions import FastMCPError, ToolError
 from fastmcp.server.dependencies import get_http_headers
 from urllib.parse import urlparse
+from fastmcp.server.dependencies import get_http_request
 
 
 class Utils:
-
-    @staticmethod
-    def get_credentials(ctx: Context) -> tuple[str, str]:
-        """Retrieves Moodle credentials (site URL and web service token) from HTTP headers or environment variables."""
-
-        # Get token/baseurl from HTTP headers first
-        headers = get_http_headers()
-        wstoken = headers.get("x-token", "")
-        baseurl = Utils.clean_baseurl(headers.get("x-moodle", ""), True)
-
-        # Then try environment variables
-        wstoken = os.environ.get("TOKEN", "").strip() if wstoken == "" else wstoken
-        baseurl = Utils.clean_baseurl(os.environ.get("MOODLE", ""), True) if baseurl == "" else baseurl
-
-        # clienthash = hashlib.sha256(f"{baseurl}|{wstoken}".encode('utf-8')).hexdigest() if hascredentials else ""
-        return baseurl, wstoken
-
-
-    @staticmethod
-    def verify_has_credentials(ctx: Context) -> tuple[str, str]:
-        """Verifies that Moodle credentials (site URL and web service token) are specified and returns them."""
-        baseurl, wstoken = Utils.get_credentials(ctx)
-        if wstoken == "" or baseurl == "":
-            # TODO show different error for different transport types (HTTP headers vs environment variables)
-            raise ToolError("Moodle site URL or web service token not provided. Please provide them using 'x-moodle' and 'x-token' HTTP headers or environment variables 'MOODLE' and 'TOKEN'.")
-            #raise ToolError("Moodle credentials (site URL and web service token) not provided.")
-        return baseurl, wstoken
-
 
     @staticmethod
     def clean_baseurl(url: str, discardInvalid: bool = False) -> str:

@@ -3,7 +3,6 @@ from typing import Any, Dict, List
 from urllib.parse import urlencode
 import requests
 from fastmcp.exceptions import ToolError
-from fastmcp.server.dependencies import get_context
 from fastmcp.tools.tool import Tool, ToolResult
 from .models import DownloadedFile
 from .utils import Utils
@@ -13,7 +12,7 @@ class MoodleTool:
     """Communication with Moodle web services."""
 
     @staticmethod
-    def urlencode_dict(d: Dict[str, Any]) -> str:
+    def _urlencode_dict(d: Dict[str, Any]) -> str:
         """Encode a nested dictionary for Moodle web service requests."""
         def _flatten(list_of_dicts: List[Dict[str, Any]]) -> Dict[str, Any]:
             return {key: val for k in list_of_dicts for key, val in k.items()}
@@ -32,13 +31,11 @@ class MoodleTool:
 
 
     @staticmethod
-    async def execute_moodle_web_service(name: str, arguments: Dict[str, Any], tools: List[Tool]) -> ToolResult:
+    async def execute_moodle_web_service(baseurl: str, wstoken: str, name: str, arguments: Dict[str, Any], tools: List[Tool]) -> ToolResult:
         """Executes the tool by making a call to Moodle web service."""
-        baseurl, wstoken = Utils.verify_has_credentials(get_context())
-
         data = {**arguments, "wstoken": wstoken, "wsfunction": name}
         jsonresult = Utils.request_post_json_moodle(f"{baseurl}/webservice/rest/server.php?moodlewsrestformat=json",
-                               data=MoodleTool.urlencode_dict(data),
+                               data=MoodleTool._urlencode_dict(data),
                                allow_redirects=True,
                                headers={'Content-Type': 'application/x-www-form-urlencoded'})
         structured_content = {"result": jsonresult}
@@ -71,15 +68,10 @@ class MoodleTool:
 
 
     @staticmethod
-    async def upload_files(arguments: Dict[str, Any]) -> ToolResult:
+    async def upload_files(baseurl: str, wstoken: str, arguments: Dict[str, Any]) -> ToolResult:
         """Uploads one or more files to Moodle draft file area."""
-        ctx = get_context()
-        baseurl, wstoken = Utils.verify_has_credentials(ctx)
-
         files = await MoodleTool._prepare_upload_files(arguments.get("files", []))
-
         jsonresult = await MoodleTool._upload_to_moodle(baseurl, wstoken, arguments, files)
-
         structured_content = MoodleTool._parse_upload_response(jsonresult)
         return ToolResult(structured_content=structured_content)
 
@@ -176,9 +168,8 @@ class MoodleTool:
 
 
     @staticmethod
-    async def download_file(arguments: Dict[str, Any]) -> ToolResult:
+    async def download_file(baseurl: str, wstoken: str, arguments: Dict[str, Any]) -> ToolResult:
         """Downloads a file from Moodle given its pluginfile.php URL."""
-        baseurl, wstoken = Utils.verify_has_credentials(get_context())
         url = arguments.get("url", "")
 
         # Check url starts with baseurl/pluginfile.php or is a relative link /pluginfile.php...
