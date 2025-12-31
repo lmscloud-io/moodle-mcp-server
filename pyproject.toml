@@ -1,6 +1,6 @@
 [project]
 name = "moodle-mcp-server"
-version = "0.1.0"
+version = "1.0.0"
 description = "MCP (Model Context Protocol) server for Moodle LMS integration"
 readme = "README.md"
 requires-python = ">=3.11"

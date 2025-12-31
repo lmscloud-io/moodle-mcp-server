@@ -12,7 +12,6 @@ from .tools import MoodleTool
 from .utils import Utils
 from mcp.types import Icon
 
-moodleLogo = "https://lmscloud.io/moodle.svg"
 
 @dataclass
 class AccessCredentials:
@@ -21,6 +20,9 @@ class AccessCredentials:
 
 class MoodleMiddleware(Middleware):
     """Middleware class for Moodle API communication."""
+
+    moodleLogo = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CiAgICA8cGF0aCBzdHlsZT0ibGluZS1oZWlnaHQ6bm9ybWFsO3RleHQtaW5kZW50OjA7dGV4dC1hbGlnbjpzdGFydDt0ZXh0LWRlY29yYXRpb24tbGluZTpub25lO3RleHQtZGVjb3JhdGlvbi1zdHlsZTpzb2xpZDt0ZXh0LWRlY29yYXRpb24tY29sb3I6IzAwMDt0ZXh0LXRyYW5zZm9ybTpub25lO2Jsb2NrLXByb2dyZXNzaW9uOnRiO2lzb2xhdGlvbjphdXRvO21peC1ibGVuZC1tb2RlOm5vcm1hbCIgZD0iTSAxNCAzIEwgNiA0IEwgMCA4IEwgMSA4IEwgMSAxOCBMIDIgMTggTCAyIDggTCA0LjAxMTcxODggOCBDIDQuMDA5NTAxMSA4LjA2NzQ2NDIgNCA4LjEyMzQ0NTYgNCA4LjE5MzM1OTQgQyA0IDkuMzc3MzU5NCA0LjMyMjI2NTYgMTAuMTk3MjY2IDQuMzIyMjY1NiAxMC4xOTcyNjYgTCA4Ljc2NTYyNSAxMS4yNjE3MTkgTCAxMi4wMTM2NzIgNy41ODc4OTA2IEMgMTIuMDEzNjcyIDcuNTg3ODkwNiAxMS43MTk2MjQgNi4zNjAzODQ1IDExLjA0ODgyOCA1LjQ1ODk4NDQgTCAxNCAzIHogTSAxOC41IDcgQyAxNi45MjkwMTIgNyAxNS41MDc2NDkgNy42NzQ4NzEyIDE0LjUwMTk1MyA4Ljc0NDE0MDYgQyAxNC4yNDM1ODggOC40NjkzOTggMTMuOTYxNjUxIDguMjE1NDU2OSAxMy42NTIzNDQgNy45OTgwNDY5IEwgMTEuNjMyODEyIDEwLjI4MzIwMyBDIDEyLjQ0MDgxMiAxMC42OTgyMDMgMTMgMTEuNTMxIDEzIDEyLjUgTCAxMyAyMCBMIDE2IDIwIEwgMTYgMTIuNSBDIDE2IDExLjEwMTc3NCAxNy4xMDE3NzQgMTAgMTguNSAxMCBDIDE5Ljg5ODIyNiAxMCAyMSAxMS4xMDE3NzQgMjEgMTIuNSBMIDIxIDIwIEwgMjQgMjAgTCAyNCAxMi41IEMgMjQgOS40ODAyMjU5IDIxLjUxOTc3NCA3IDE4LjUgNyB6IE0gNS4wMzMyMDMxIDExLjkxMDE1NiBDIDUuMDEyMjAzMSAxMi4xMDQxNTYgNSAxMi4zMDEgNSAxMi41IEwgNSAyMCBMIDggMjAgTCA4IDEyLjYyMTA5NCBMIDUuMDMzMjAzMSAxMS45MTAxNTYgeiIgZm9udC13ZWlnaHQ9IjQwMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHdoaXRlLXNwYWNlPSJub3JtYWwiIG92ZXJmbG93PSJ2aXNpYmxlIi8+Cjwvc3ZnPg=="
+    icon = Icon(src=moodleLogo, mimeType="image/svg+xml")
 
     def __init__(self) -> None:
         self._all_client_tools: Dict[str, Dict[str, Tool]] = {}
@@ -195,9 +197,7 @@ class MoodleMiddleware(Middleware):
             description=toolinfo.get("description"),
             parameters=toolinfo.get("inputSchema"),
             output_schema=toolinfo.get("outputSchema"),
-            icons=[
-                Icon(src=moodleLogo, mimeType="image/svg+xml"),
-            ],
+            icons=[self.icon],
             enabled=True,
         )
 
