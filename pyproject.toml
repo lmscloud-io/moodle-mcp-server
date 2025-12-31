@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/lmscloud-io/moodle-mcp-server"
+Homepage = "https://lmscloud.io/products/moodle-mcp/"
 Repository = "https://github.com/lmscloud-io/moodle-mcp-server"
 Issues = "https://github.com/lmscloud-io/moodle-mcp-server/issues"
 

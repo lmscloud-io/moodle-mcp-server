@@ -10,6 +10,9 @@ from fastmcp.tools.tool import Tool, ToolResult
 from typing_extensions import override
 from .tools import MoodleTool
 from .utils import Utils
+from mcp.types import Icon
+
+moodleLogo = "https://lmscloud.io/moodle.svg"
 
 @dataclass
 class AccessCredentials:
@@ -192,6 +195,9 @@ class MoodleMiddleware(Middleware):
             description=toolinfo.get("description"),
             parameters=toolinfo.get("inputSchema"),
             output_schema=toolinfo.get("outputSchema"),
+            icons=[
+                Icon(src=moodleLogo, mimeType="image/svg+xml"),
+            ],
             enabled=True,
         )
 
