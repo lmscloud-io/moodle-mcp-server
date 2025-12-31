@@ -26,8 +26,8 @@ class MoodleMiddleware(Middleware):
 
     async def _get_credentials(self, ctx: Context) -> tuple[str, str]:
         """Retrieves Moodle credentials (site URL and web service token) from HTTP headers or environment variables."""
-        wstoken = os.environ.get("TOKEN", "").strip() if wstoken == "" else wstoken
-        baseurl = Utils.clean_baseurl(os.environ.get("MOODLE", ""), True) if baseurl == "" else baseurl
+        wstoken = os.environ.get("TOKEN", "").strip()
+        baseurl = Utils.clean_baseurl(os.environ.get("MOODLE", ""), True)
         if wstoken == "" or baseurl == "":
             raise FastMCPError("Missing Moodle credentials. Please set the 'MOODLE' environment variable to your site URL and the 'TOKEN' environment variable to your web service token.")
         return baseurl, wstoken
